@@ -13,107 +13,101 @@ License: GPLv2 or later
 Text domain: opdracht-plugin
 */
 
-// $url = 'https://jsonplaceholder.typicode.com/todos';
-// $url_components = parse_url($url);
-// parse_str($url_components['query'], $params);
-
-// echo ' Hi '.$params['title'];
-// var_dump($url_components);
-
-// $names = file_get_contents('https://jsonplaceholder.typicode.com/todos');
-// print_r (explode("<br>",$php_array));
-
-$files=file('https://jsonplaceholder.typicode.com/todos');
-
-// $title = $files[4];
-// print_r($title);
-print_r($files);
-
-// $files = array_diff($files, array('{','}','[',']'));
-// $files = array_values($files);
-// To check the number of lines
-// echo count($names).'<br>';
-// var_dump($names);
-// print_r($names);
-
-
-
-// print_r(array_values($names));
-// foreach($files as $key => $value)
-// {
-// // echo $value->find("title")->plaintext;
-// 	echo $key. $value.'<br>';
-// 	// $x = explode("{", "}", $value);
-// }
-
-	// echo $key.'<br>';
-	// echo $value.'<br>';
-	// echo $value[$title].'<br>';
-
-
-	// echo $name[$title].'<br>';
-	// echo $name['title'], '<br>';
-
-
-// foreach($names['data'] as $result) {
-//     echo $result['title'], '<br>';
-// }
-
-// defined('ABSPATH') or die('You can\t acces this file.');
-
-
-
-// andere methode
-// $files = file_get_contents('https://jsonplaceholder.typicode.com/todos');
-// foreach((array)$files as $file)
-// {
-
-
-// 	echo $file.'<br>';
-// 	// echo $file[$title].'<br>';
-// 	// echo $file[$title];
-
-// }
-
-/**
- * 
- */
-
+// DELETE FROM `wp_posts` WHERE post_type = "post";
 
 
 class CustomPlugin 
 {
 	function __construct(){
-		add_action( 'custom_column', array($this, 'addColumn' ));
+		add_action( 'custom_column', array($this, 'addColumn'));
 		add_action( 'custom_posts', array($this, 'posts' ));
-		// add_action('init', array($this, 'custom_post_type'));
+		// add_action( 'timeout', array($this, 'timeout' ));
 
+
+		do_action( 'custom_column', array($this, 'addColumn'));
+		do_action( 'custom_posts', array($this, 'posts' ));
+		// do_action( 'timeout', array($this, 'timeout'));
+
+		// add_action('init', array($this, 'custom_post_type'));
 	}
+	// THIS FUNCTION STOPS THE WEBSITE.. NOT USING.
+	function timeout(){
+			set_time_limit(0); // make it run forever
+			while(true) {
+			    array($this, 'posts' );
+			    sleep(300);
+			}
+	}
+
 	function addColumn(){
 		global $wpdb;
-		$row = $wpdb->get_results(  "SELECT COLUMN_NAME FROM bitnami_wordpress.COLUMNS
+
+		$row = $wpdb->get_results(  "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
 		WHERE table_name = 'wp_posts' AND column_name = 'completed'"  );
 
+		// var_dump($row);
 		if(empty($row)){
 		   $wpdb->query("ALTER TABLE wp_posts ADD completed BOOLEAN");
 		}
 	}
 
 	function posts(){
-		global $wpdb;
-		$wpdb->insert( 
-		    'wp_posts', 
-		    array( 
-		    	'post_title'=> "x",
-		    	'post_content'=> "a",
 
-		    )
-		);
-		$record_id = $wpdb->insert_id;
+		$files = file_get_contents('https://jsonplaceholder.typicode.com/todos');
+		$arr = json_decode($files, true);
+
+		$i = 0;
+		$len = count($arr);
+		// print_r($len);
+		foreach ($arr as $key => $value) {
+
+			// echo $value["userId"]. '<br>';
+			// echo $value["title"]. '<br>';
+			$userId = $value['userId'];
+			$id = $value['id'];
+			$title = $value['title'];
+			$completed = $value['completed'];
+			$user_id = get_current_user_id();
+			
+			foreach($value as $k)
+			global $wpdb;
+
+			 $wpdb->insert( 
+			    'wp_posts', 
+			    array( 
+			    	'post_author'=> $userId,
+			    	'post_title'=> $title,
+			    	'post_type'=> "post",
+			    	'completed'=> $completed,
+			    	// 'ID'=> $id,
+			    )
+			);
+			$record_id = $wpdb->insert_id;
+
+			
+
+			// deze werkt nog niet
+			// $wpdb->insert( 
+			//     'wp_postmeta', 
+			//     array( 
+			//     	'post_id'=> $id,
+			//     )
+			// );
+
+			// time out voor de functie werkt nog niet helemaal stopt de activate button van de plugin maar insert wel data
+			// sleep(3600);
+		}
+
+		// SHOW ALL COMPLETED DATA, ik heb dit uitstaan omdat de timeout niet goed werkt en dus alleen maar meer wordt.
+		// global $wpdb;
+		// $result = $wpdb->get_results(  "SELECT * FROM wp_posts WHERE completed = 1"  );
+		// var_dump($result);
+
+		// BONUS
+		// global $wpdb;
+		// $bonus = $wpdb->get_results(  "SELECT * FROM wp_posts WHERE completed != 1 AND post_title RLIKE '^[aeiouAEIOU]'"  );
+		// var_dump($bonus);
 	}
-	// function __construct(){
-	// 	add_action('init', array($this, 'posts'));
-	// }
 
 	function activate(){
 		flush_rewrite_rules();
@@ -124,11 +118,10 @@ class CustomPlugin
 	function uninstall(){
 
 	}
+	// testing a function
 	function custom_post_type(){
 		register_post_type('book', ['public' => true, 'label' => 'Books' ]);
 	}
-
-
 }
 
 if(class_exists('CustomPlugin')){
@@ -140,44 +133,9 @@ register_activation_hook( __FILE__, array( $customPlugin, 'activate' ));
 //deactivation
 register_deactivation_hook( __FILE__, array( $customPlugin, 'deactivate' ));
 
-
-
-	// add_action("wp", function() { 
-	//     echo sprintf( "Yes! I am creating with WordPress v. %s!\n", get_bloginfo("version") );
-	//     exit("I exits\n");
-	// });
-
-
-
-// addColumn();
-// add_action( 'addColumn', 'posts' );
-
-
-
-// add_action( 'call_customPlugin', array ( $customPlugin, 'addColumn' ));
-
-// add_action( 'call_customPlugin', 'addColumn' );
-
-// add_action( 'postsx', 'posts' );
-
-
-
-
-	// $demo = new Demo_Class;
-	// add_action( 'call_dynamic_method', array ( $demo, 'dynamic_method' );
-// addColumn();
-// posts();
-
-
-
-		// global $wpdb;
-		// $wpdb->insert( 
-		//     'wp_posts', 
-		//     array( 
-		//     	'post_title'=> "x",
-		//     	'post_content'=> "a",
-
-		//     )
-		// );
-
-		// $record_id = $wpdb->insert_id;
+// function foo_command( $args ) {
+//     WP_CLI::success( $args[0] );
+// }
+// if ( class_exists( 'WP_CLI' ) ) {
+//     WP_CLI::add_command( 'CustomCommand', 'CustomPlugin' );
+// }
